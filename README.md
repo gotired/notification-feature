@@ -4,8 +4,8 @@ goal of this repository is to practice design notification feature for multi-ten
 
 - [ ] request api that create notification across tenant
 - [ ] notification on user side can be read or unread
-- [ ] basic crud tenant
-- [ ] basic crud user
+- [x] basic crud tenant
+- [x] basic crud user
 
 ## Stack
 
@@ -24,6 +24,8 @@ flowchart TD
     gateway["`App service
     (Golang)`"]
 
+    keeper["`Apache ZooKeeper`"]
+
     kafka["`Message Queuing Service
     (Apache Kafka)`"]
 
@@ -37,6 +39,8 @@ flowchart TD
     subgraph container [Docker Container]
         gateway --> kafka --> worker --> db
         gateway --> db
+        kafka --> keeper
+        keeper --> kafka
     end
 
 ```
