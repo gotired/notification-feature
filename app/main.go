@@ -8,6 +8,7 @@ import (
 	"github.com/gotired/notification-feature/app/config"
 	"github.com/gotired/notification-feature/app/database"
 	"github.com/gotired/notification-feature/app/handler"
+	"github.com/gotired/notification-feature/app/producer"
 	"github.com/gotired/notification-feature/app/repositories"
 	"github.com/gotired/notification-feature/app/services"
 )
@@ -15,6 +16,7 @@ import (
 func main() {
 	config := config.Load("./config/config.yaml")
 	database := database.NewDatabase(config.Database.URL, config.Database.Name)
+	producer := producer.NewProducer(config.Kafka.Server)
 
 	tenantRepo := repositories.NewTenantRepository(database)
 	userRepo := repositories.NewUserRepository(database)
@@ -24,6 +26,7 @@ func main() {
 
 	tenantHandler := handler.NewTenantHandler(tenantService)
 	userHandler := handler.NewUserHandler(userService, tenantService)
+	notiHandler := handler.NewNotificationHandler(producer, database)
 
 	app := fiber.New()
 	app.Use(logger.New())
@@ -31,6 +34,7 @@ func main() {
 	api := app.Group("/api")
 	tenantRouter := api.Group("/tenants")
 	userRouter := api.Group("/users")
+	notiRouter := api.Group("/notifications")
 
 	tenantRouter.Post("", tenantHandler.Create)
 	tenantRouter.Get("", tenantHandler.List)
@@ -43,6 +47,8 @@ func main() {
 	userRouter.Get(":user_id", userHandler.Get)
 	userRouter.Get("", userHandler.List)
 	userRouter.Put(":user_id", userHandler.Update)
+
+	notiRouter.Post("", notiHandler.CreateAlert)
 
 	log.Fatal(app.Listen(":3000"))
 }
